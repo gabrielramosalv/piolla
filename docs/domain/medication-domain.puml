@@ -1,0 +1,140 @@
+@startuml medication-domain
+
+title Controlled Medication Domain
+
+skinparam classAttributeIconSize 0
+
+class Medication {
+    id: UUID
+    administration: Administration
+    pharmaceuticalForm: PharmaceuticalForm
+    medicationIngredients: List<MedicationIngredient>
+}
+
+class ActiveIngredient {
+    id: UUID
+    name: String
+}
+
+class MedicationIngredient {
+    strength: Strength
+    activeIngredient: ActiveIngredient
+}
+
+class Strength {
+    value: Decimal
+    unit: Unit
+    perValue: Decimal
+    perUnit: Unit
+}
+
+class MedicinalProduct {
+    id: UUID
+    brandName: String
+    manufacturer: Manufacturer
+    medication: Medication
+    medicationRegulations: List<MedicationRegulation>
+    medicationPackages: List<MedicationPackage>
+}
+
+class MedicationPackage {
+    id: UUID
+    quantity: Decimal
+    unit: Unit
+}
+
+class RegulatoryAuthority {
+    id: UUID
+    name: String
+    acronym: String
+}
+
+class MedicationRegulation {
+    regulatoryAuthority: RegulatoryAuthority
+    classifications: List<RegulatoryClassification>
+}
+
+class RegulatoryClassification {
+    value: String
+    type: String
+}
+
+class Manufacturer {
+    id: UUID
+    name: String
+}
+
+enum Unit {
+    MCG
+    MG
+    G
+    KG
+    MCL
+    ML
+    L
+    MMOL
+    MOL
+    MEQ
+    IU
+    UNIT
+    PERCENT
+    TABLET
+    CAPSULE
+    DROP
+    DOSE
+    PUFF
+    SPRAY
+    PATCH
+    SACHET
+    SUPPOSITORY
+    AMPOULE
+    VIAL
+}
+
+enum Administration {
+    ORAL
+    SUBLINGUAL
+    BUCCAL
+    TOPICAL
+    TRANSDERMAL
+    INHALATION
+    NASAL
+    OPHTHALMIC
+    OTIC
+    RECTAL
+    VAGINAL
+    INTRAVENOUS
+    INTRAMUSCULAR
+    SUBCUTANEOUS
+}
+
+enum PharmaceuticalForm {
+    TABLET
+    CAPSULE
+    SOLUTION
+    SUSPENSION
+    SYRUP
+    DROPS
+    CREAM
+    OINTMENT
+    GEL
+    PATCH
+    SPRAY
+    AEROSOL
+    POWDER
+    GRANULE
+    SUPPOSITORY
+    INJECTION
+}
+
+MedicinalProduct "1" *-- "0..*" MedicationPackage
+MedicinalProduct "1" *-- "1" Medication
+MedicinalProduct "1" o-- "1" Manufacturer
+MedicinalProduct "1" *-- "1..*" MedicationRegulation
+Medication "1" *-- "1..*" MedicationIngredient
+MedicationIngredient "1" *-- "1" Strength
+MedicationIngredient "1" *-- "1" ActiveIngredient
+MedicationRegulation "1" *-- "1" RegulatoryAuthority
+MedicationRegulation "1" o-- "0..*" RegulatoryClassification
+
+@enduml
