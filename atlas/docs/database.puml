@@ -1,0 +1,112 @@
+@startuml medication-database
+
+title Database
+
+hide circle
+skinparam linetype ortho
+
+database "piolla" {
+    entity "manufacturers" as manufacturers {
+        * id: UUID <<PK>>
+        --
+        name: VARCHAR
+    }
+
+    entity "medications" as medications {
+        * id: UUID <<PK>>
+        --
+        administration: VARCHAR
+        pharmaceutical_form: VARCHAR
+    }
+
+    entity "active_ingredients" as active_ingredients {
+        * id: UUID <<PK>>
+        --
+        inn: VARCHAR
+    }
+
+    entity "medication_ingredients" as medication_ingredients {
+        * id: UUID <<PK>>
+        --
+        medication_id: UUID <<FK>>
+        active_ingredient_id: UUID <<FK>>
+        strength_value: DECIMAL
+        strength_unit: VARCHAR
+        strength_per_value: DECIMAL
+        strength_per_unit: VARCHAR
+    }
+
+    entity "medicinal_products" as medicinal_products {
+        * id: UUID <<PK>>
+        --
+        brand_name: VARCHAR
+        manufacturer_id: UUID <<FK>>
+        medication_id: UUID <<FK>>
+    }
+
+    entity "medication_packages" as medication_packages {
+        * id: UUID <<PK>>
+        --
+        medicinal_product_id: UUID <<FK>>
+        quantity: DECIMAL
+        unit: VARCHAR
+    }
+
+    entity "regulatory_authorities" as regulatory_authorities {
+        * id: UUID <<PK>>
+        --
+        name: VARCHAR
+        acronym: VARCHAR
+    }
+
+    entity "medication_regulations" as medication_regulations {
+        * id: UUID <<PK>>
+        --
+        medicinal_product_id: UUID <<FK>>
+        regulatory_authority_id: UUID <<FK>>
+    }
+
+    entity "regulatory_classifications" as regulatory_classifications {
+        * id: UUID <<PK>>
+        --
+        medication_regulation_id: UUID <<FK>>
+        value: VARCHAR
+        type: VARCHAR
+    }
+
+    entity "sources" as sources {
+        * id: UUID <<PK>>
+        --
+        name: VARCHAR
+        acronym: VARCHAR
+    }
+
+    entity "medicinal_product_source_references" as medicinal_product_source_references {
+        * medicinal_product_id: UUID <<PK, FK>>
+        * source_id: UUID <<PK, FK>>
+        * external_id: VARCHAR <<PK>>
+    }
+
+    entity "active_ingredient_source_references" as active_ingredient_source_references {
+        * active_ingredient_id: UUID <<PK, FK>>
+        * source_id: UUID <<PK, FK>>
+        * external_id: VARCHAR <<PK>>
+    }
+}
+
+manufacturers ||--o{ medicinal_products
+medications ||--o{ medicinal_products
+medicinal_products ||--o{ medication_packages
+medicinal_products ||--|{ medication_regulations
+regulatory_authorities ||--o{ medication_regulations
+medication_regulations ||--o{ regulatory_classifications
+
+medications ||--|{ medication_ingredients
+active_ingredients ||--o{ medication_ingredients
+
+medicinal_products ||--o{ medicinal_product_source_references
+sources ||--o{ medicinal_product_source_references
+active_ingredients ||--o{ active_ingredient_source_references
+sources ||--o{ active_ingredient_source_references
+
+@enduml

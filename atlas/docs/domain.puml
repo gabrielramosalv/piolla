@@ -1,6 +1,6 @@
 @startuml medication-domain
 
-title Controlled Medication Domain
+title Domain
 
 skinparam classAttributeIconSize 0
 
@@ -13,7 +13,8 @@ class Medication {
 
 class ActiveIngredient {
     id: UUID
-    name: String
+    inn: String
+    sourceReferences: List<SourceReference>
 }
 
 class MedicationIngredient {
@@ -35,6 +36,18 @@ class MedicinalProduct {
     medication: Medication
     medicationRegulations: List<MedicationRegulation>
     medicationPackages: List<MedicationPackage>
+    sourceReferences: List<SourceReference>
+}
+
+class SourceReference {
+    source: Source
+    externalId: String
+}
+
+class Source {
+    id: UUID
+    name: String
+    acronym: String
 }
 
 class MedicationPackage {
@@ -131,9 +144,12 @@ MedicinalProduct "1" *-- "0..*" MedicationPackage
 MedicinalProduct "1" *-- "1" Medication
 MedicinalProduct "1" o-- "1" Manufacturer
 MedicinalProduct "1" *-- "1..*" MedicationRegulation
+MedicinalProduct "1" *-- "0..*" SourceReference
 Medication "1" *-- "1..*" MedicationIngredient
 MedicationIngredient "1" *-- "1" Strength
 MedicationIngredient "1" *-- "1" ActiveIngredient
+ActiveIngredient "1" *-- "0..*" SourceReference
+SourceReference "1" o-- "1" Source
 MedicationRegulation "1" *-- "1" RegulatoryAuthority
 MedicationRegulation "1" o-- "0..*" RegulatoryClassification
 

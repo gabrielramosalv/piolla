@@ -1,0 +1,35 @@
+@startuml atlas-container-c4
+
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Architecture
+
+Person(consumer, "Consumidor da API", "Aplicação cliente ou usuário que consulta dados de produtos medicinais.")
+
+System_Ext(anvisaCsv, "ANVISA CSV", "Arquivos CSV", "Fonte regulatória brasileira importada pelo Atlas.")
+System_Ext(openFda, "openFDA", "API REST / datasets", "Fonte de dados de medicamentos e regulação dos Estados Unidos importada pelo Atlas.")
+System_Ext(who, "WHO", "Datasets", "Fonte internacional de dados de saúde e medicamentos importada pelo Atlas.")
+System_Ext(otherSources, "Outras fontes de origem", "CSV / API / datasets", "Fontes adicionais de medicamentos suportadas pelo pipeline de importação.")
+
+System_Boundary(atlasSystem, "Atlas") {
+    Container(atlasApi, "API Atlas", "API REST", "Expõe produtos medicinais, princípios ativos, fontes e referências externas.")
+    Container(importer, "Importador de dados", "Batch / worker agendado", "Importa, normaliza e persiste dados de medicamentos das fontes de origem.")
+    ContainerDb(database, "Banco de dados Atlas", "Banco de dados relacional", "Armazena dados normalizados de produtos medicinais, medicamentos, ingredientes, regulações e referências de fonte.")
+    ContainerDb(redis, "Redis", "Armazenamento em memória", "Armazena cache de respostas da API e consultas temporárias.")
+}
+
+Rel(consumer, atlasApi, "Consome", "HTTPS / JSON")
+
+Rel(atlasApi, redis, "Lê e grava resultados de requisições em cache", "Protocolo Redis")
+Rel(atlasApi, database, "Lê dados canônicos", "SQL")
+
+Rel(importer, anvisaCsv, "Importa dados de produtos e regulação de", "CSV")
+Rel(importer, openFda, "Importa dados de produtos e regulação de", "HTTPS / JSON")
+Rel(importer, who, "Importa dados internacionais de referência de", "Importação de dataset")
+Rel(importer, otherSources, "Importa dados de fontes suportadas de", "CSV / API")
+Rel(importer, database, "Insere ou atualiza dados normalizados e referências externas", "SQL")
+Rel(importer, redis, "Invalida requisições em cache afetadas pela importação", "Protocolo Redis")
+
+SHOW_LEGEND()
+
+@enduml
