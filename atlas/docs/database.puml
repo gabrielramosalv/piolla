@@ -6,107 +6,384 @@ hide circle
 skinparam linetype ortho
 
 database "piolla" {
-    entity "manufacturers" as manufacturers {
-        * id: UUID <<PK>>
-        --
-        name: VARCHAR
+    package medication {
+        entity "organizations" as organizations {
+            * id: UUID <<PK>>
+            --
+            name: VARCHAR
+            tax_identification_number: VARCHAR <<NULL>>
+            country_iso_code: VARCHAR <<NULL>>
+        }
+
+        entity "medicinal_products" as medicinal_products {
+            * id: UUID <<PK>>
+            --
+            name: VARCHAR
+            brand_name: VARCHAR <<NULL>>
+            medication_id: UUID <<FK>>
+        }
+
+        entity "medicinal_product_organizations" as medicinal_product_organizations {
+            * medicinal_product_id: UUID <<PK, FK>>
+            * organization_id: UUID <<PK, FK>>
+            * role: VARCHAR <<PK>>
+        }
+
+        entity "medications" as medications {
+            * id: UUID <<PK>>
+            --
+            administration_route_id: UUID <<FK>>
+            pharmaceutical_form_id: UUID <<FK>>
+        }
+
+        entity "administration_routes" as administration_routes {
+            * id: UUID <<PK>>
+            --
+            code: VARCHAR <<UK>>
+            name: VARCHAR
+        }
+
+        entity "pharmaceutical_forms" as pharmaceutical_forms {
+            * id: UUID <<PK>>
+            --
+            code: VARCHAR <<UK>>
+            name: VARCHAR
+        }
+
+        entity "active_ingredients" as active_ingredients {
+            * id: UUID <<PK>>
+            --
+            inn: VARCHAR
+        }
+
+        entity "medication_ingredients" as medication_ingredients {
+            * id: UUID <<PK>>
+            --
+            medication_id: UUID <<FK>>
+            active_ingredient_id: UUID <<FK>>
+            strength_value: DECIMAL
+            strength_unit: VARCHAR
+            strength_per_value: DECIMAL <<NULL>>
+            strength_per_unit: VARCHAR <<NULL>>
+        }
+
+        entity "medication_packages" as medication_packages {
+            * id: UUID <<PK>>
+            --
+            medicinal_product_id: UUID <<FK>>
+            quantity: DECIMAL
+            unit: VARCHAR
+        }
+
+        entity "medication_package_gtins" as medication_package_gtins {
+            * medication_package_id: UUID <<PK, FK>>
+            * gtin: VARCHAR <<PK>>
+        }
+
+        entity "regulatory_authorities" as regulatory_authorities {
+            * id: UUID <<PK>>
+            --
+            name: VARCHAR
+            acronym: VARCHAR
+            country_iso_code: VARCHAR <<NULL>>
+        }
+
+        entity "medication_regulations" as medication_regulations {
+            * id: UUID <<PK>>
+            --
+            medicinal_product_id: UUID <<FK>>
+            regulatory_authority_id: UUID <<FK>>
+        }
+
+        entity "regulatory_classifications" as regulatory_classifications {
+            * id: UUID <<PK>>
+            --
+            medication_regulation_id: UUID <<FK>>
+            value: VARCHAR
+            type: VARCHAR
+        }
+
+        entity "medication_classification_systems" as medication_classification_systems {
+            * id: UUID <<PK>>
+            --
+            maintainer_organization_id: UUID <<FK, NULL>>
+            name: VARCHAR
+            acronym: VARCHAR
+        }
+
+        entity "medication_classifications" as medication_classifications {
+            * id: UUID <<PK>>
+            --
+            medication_classification_system_id: UUID <<FK>>
+            parent_medication_classification_id: UUID <<FK, NULL>>
+            code: VARCHAR
+            name: VARCHAR
+        }
+
+        entity "medications_medication_classifications" as medications_medication_classifications {
+            * medication_id: UUID <<PK, FK>>
+            * medication_classification_id: UUID <<PK, FK>>
+        }
     }
 
-    entity "medications" as medications {
-        * id: UUID <<PK>>
-        --
-        administration: VARCHAR
-        pharmaceutical_form: VARCHAR
-    }
+    package provenance {
+        entity "source_organizations" as source_organizations {
+            * id: UUID <<PK>>
+            --
+            name: VARCHAR
+            acronym: VARCHAR <<UK>>
+            country_iso_code: VARCHAR <<NULL>>
+        }
 
-    entity "active_ingredients" as active_ingredients {
-        * id: UUID <<PK>>
-        --
-        inn: VARCHAR
-    }
+        entity "data_sources" as data_sources {
+            * id: UUID <<PK>>
+            --
+            source_organization_id: UUID <<FK>>
+            name: VARCHAR
+            type: VARCHAR
+            format: VARCHAR <<NULL>>
+        }
 
-    entity "medication_ingredients" as medication_ingredients {
-        * id: UUID <<PK>>
-        --
-        medication_id: UUID <<FK>>
-        active_ingredient_id: UUID <<FK>>
-        strength_value: DECIMAL
-        strength_unit: VARCHAR
-        strength_per_value: DECIMAL
-        strength_per_unit: VARCHAR
-    }
+        entity "data_provenances" as data_provenances {
+            * id: UUID <<PK>>
+            --
+            etl_execution_id: BIGINT <<FK, NULL>>
+            subject_type: VARCHAR
+            subject_id: UUID
+            external_reference: VARCHAR
+            extracted_at: TIMESTAMP
+            role: VARCHAR
+        }
 
-    entity "medicinal_products" as medicinal_products {
-        * id: UUID <<PK>>
-        --
-        brand_name: VARCHAR
-        manufacturer_id: UUID <<FK>>
-        medication_id: UUID <<FK>>
-    }
+        entity "etl_processes" as etl_processes {
+            * id: UUID <<PK>>
+            --
+            data_source_id: UUID <<FK>>
+            name: VARCHAR
+            version: VARCHAR
+        }
 
-    entity "medication_packages" as medication_packages {
-        * id: UUID <<PK>>
-        --
-        medicinal_product_id: UUID <<FK>>
-        quantity: DECIMAL
-        unit: VARCHAR
-    }
+        entity "etl_executions" as etl_executions {
+            * id: BIGINT <<PK>>
+            --
+            etl_process_id: UUID <<FK>>
+            started_at: TIMESTAMP
+            finished_at: TIMESTAMP <<NULL>>
+            status: VARCHAR
+        }
 
-    entity "regulatory_authorities" as regulatory_authorities {
-        * id: UUID <<PK>>
-        --
-        name: VARCHAR
-        acronym: VARCHAR
-    }
-
-    entity "medication_regulations" as medication_regulations {
-        * id: UUID <<PK>>
-        --
-        medicinal_product_id: UUID <<FK>>
-        regulatory_authority_id: UUID <<FK>>
-    }
-
-    entity "regulatory_classifications" as regulatory_classifications {
-        * id: UUID <<PK>>
-        --
-        medication_regulation_id: UUID <<FK>>
-        value: VARCHAR
-        type: VARCHAR
-    }
-
-    entity "sources" as sources {
-        * id: UUID <<PK>>
-        --
-        name: VARCHAR
-        acronym: VARCHAR
-    }
-
-    entity "medicinal_product_source_references" as medicinal_product_source_references {
-        * medicinal_product_id: UUID <<PK, FK>>
-        * source_id: UUID <<PK, FK>>
-        * external_id: VARCHAR <<PK>>
-    }
-
-    entity "active_ingredient_source_references" as active_ingredient_source_references {
-        * active_ingredient_id: UUID <<PK, FK>>
-        * source_id: UUID <<PK, FK>>
-        * external_id: VARCHAR <<PK>>
+        entity "etl_raw_artifacts" as etl_raw_artifacts {
+            * id: UUID <<PK>>
+            --
+            etl_execution_id: BIGINT <<FK>>
+            file_path: VARCHAR
+            checksum: VARCHAR
+            retrieved_at: TIMESTAMP
+            size_in_bytes: BIGINT
+            content_type: VARCHAR
+        }
     }
 }
 
-manufacturers ||--o{ medicinal_products
 medications ||--o{ medicinal_products
+organizations ||--o{ medicinal_product_organizations
+medicinal_products ||--o{ medicinal_product_organizations
+administration_routes ||--o{ medications
+pharmaceutical_forms ||--o{ medications
 medicinal_products ||--o{ medication_packages
+medication_packages ||--o{ medication_package_gtins
 medicinal_products ||--|{ medication_regulations
 regulatory_authorities ||--o{ medication_regulations
 medication_regulations ||--o{ regulatory_classifications
 
+note as ProductOrganizationsNote
+Papéis possíveis:
+- MANUFACTURER
+- REGISTRATION_HOLDER
+- MARKETING_AUTHORIZATION_HOLDER
+end note
+medicinal_product_organizations .. ProductOrganizationsNote
+
+note as AdministrationRoutesNote
+Tipos de administração conhecidos:
+- ORAL
+- SUBLINGUAL
+- BUCCAL
+- TOPICAL
+- TRANSDERMAL
+- INHALATION
+- NASAL
+- OPHTHALMIC
+- OTIC
+- RECTAL
+- VAGINAL
+- INTRAVENOUS
+- INTRAMUSCULAR
+- SUBCUTANEOUS
+
+Constraint:
+- UNIQUE (code)
+end note
+administration_routes .. AdministrationRoutesNote
+
+note as PharmaceuticalFormsNote
+Formas farmacêuticas conhecidas:
+- TABLET
+- CAPSULE
+- SOLUTION
+- SUSPENSION
+- SYRUP
+- DROPS
+- CREAM
+- OINTMENT
+- GEL
+- PATCH
+- SPRAY
+- AEROSOL
+- POWDER
+- GRANULE
+- SUPPOSITORY
+- INJECTION
+
+Constraint:
+- UNIQUE (code)
+end note
+pharmaceutical_forms .. PharmaceuticalFormsNote
+
+note as RegulatoryAuthoritiesNote
+Autoridade regulatória atual:
+- ANVISA
+
+Observação:
+- country_iso_code é opcional.
+end note
+regulatory_authorities .. RegulatoryAuthoritiesNote
+
+note as RegulatoryClassificationsNote
+Classificações regulatórias atuais:
+- Tarja vermelha
+- Tarja preta
+- Sem tarja (venda livre)
+end note
+regulatory_classifications .. RegulatoryClassificationsNote
+
 medications ||--|{ medication_ingredients
 active_ingredients ||--o{ medication_ingredients
+medications ||--o{ medications_medication_classifications
+medication_classifications ||--o{ medications_medication_classifications
+medication_classification_systems ||--o{ medication_classifications
+medication_classifications ||--o{ medication_classifications : parent
+source_organizations ||--o{ medication_classification_systems : maintainer
 
-medicinal_products ||--o{ medicinal_product_source_references
-sources ||--o{ medicinal_product_source_references
-active_ingredients ||--o{ active_ingredient_source_references
-sources ||--o{ active_ingredient_source_references
+source_organizations ||--o{ data_sources
+data_sources ||--o{ etl_processes
+etl_processes ||--o{ etl_executions
+etl_executions ||--o{ data_provenances
+etl_executions ||--o{ etl_raw_artifacts
+
+note as SourceOrganizationsNote
+Organizações fonte atuais:
+- ANVISA
+- CMED
+- WHO
+- FDA
+
+Constraints:
+- UNIQUE (acronym), quando aplicável
+- country_iso_code é opcional
+end note
+source_organizations .. SourceOrganizationsNote
+
+note as DataSourcesNote
+Tipos possíveis:
+- FILE
+- API
+- DATABASE
+- WEB_RESOURCE
+
+Formatos possíveis:
+- CSV
+- JSON
+- XML
+- PDF
+
+Fontes de dados atuais:
+- CSV da CMED
+- CSV da ANVISA
+end note
+data_sources .. DataSourcesNote
+
+note as DataProvenancesNote
+Subject types possíveis:
+- medicinal_products
+- medications
+- active_ingredients
+- organizations
+- medication_packages
+- medication_classifications
+- administration_routes
+- pharmaceutical_forms
+- regulatory_classifications
+
+Papéis possíveis:
+- IDENTIFICATION
+- COMPOSITION
+- CLASSIFICATION
+- REGULATION
+- PRESENTATION
+- COMMERCIALIZATION
+
+Observações:
+- etl_execution_id é opcional
+- subject_type evita acoplamento ao nome físico da tabela
+end note
+data_provenances .. DataProvenancesNote
+
+note as ETLProcessesNote
+Constraint:
+- UNIQUE (name, version)
+end note
+etl_processes .. ETLProcessesNote
+
+note as ETLExecutionsNote
+Status possíveis:
+- SUCCESS
+- FAILED
+- RUNNING
+- CANCELED
+
+Regras:
+- finished_at é nullable enquanto status = RUNNING
+- finished_at >= started_at quando preenchido
+end note
+etl_executions .. ETLExecutionsNote
+
+note as ETLRawArtifactsNote
+Representa o artefato bruto recuperado pela ETL:
+- caminho do arquivo
+- checksum
+- instante de recuperação
+- tamanho em bytes
+- content type
+end note
+etl_raw_artifacts .. ETLRawArtifactsNote
+
+note as MedicationClassificationSystemsNote
+Sistemas de classificação atuais:
+- EphMRA (CMED)
+- ATC (OMS)
+- THERAPEUTIC_CLASS (ANVISA)
+
+Observação:
+- maintainer_organization_id é opcional
+end note
+medication_classification_systems .. MedicationClassificationSystemsNote
+
+note as MedicationClassificationsNote
+Constraints:
+- UNIQUE (medication_classification_system_id, code)
+- parent deve pertencer ao mesmo sistema do filho
+end note
+medication_classifications .. MedicationClassificationsNote
 
 @enduml
