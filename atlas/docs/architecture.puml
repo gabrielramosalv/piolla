@@ -6,16 +6,18 @@ title Architecture
 
 Person(consumer, "Consumidor da API", "Aplicação cliente ou usuário que consulta dados de produtos medicinais.")
 
-System_Ext(anvisaCsv, "ANVISA CSV", "Arquivos CSV", "Fonte regulatória brasileira importada pelo Atlas.")
-System_Ext(openFda, "openFDA", "API REST / datasets", "Fonte de dados de medicamentos e regulação dos Estados Unidos importada pelo Atlas.")
-System_Ext(who, "WHO", "Datasets", "Fonte internacional de dados de saúde e medicamentos importada pelo Atlas.")
-System_Ext(otherSources, "Outras fontes de origem", "CSV / API / datasets", "Fontes adicionais de medicamentos suportadas pelo pipeline de importação.")
+System_Ext(anvisa, "ANVISA", "CSV / datasets", "Fonte regulatória brasileira consumida pelo Atlas.")
+System_Ext(cmed, "CMED", "CSV / datasets", "Fonte brasileira de dados de preços e classificações consumida pelo Atlas.")
+System_Ext(openFda, "openFDA", "API REST / datasets", "Fonte de dados dos Estados Unidos consumida pelo Atlas.")
+System_Ext(who, "WHO", "Datasets", "Fonte internacional de dados de saúde e medicamentos consumida pelo Atlas.")
+System_Ext(otherSources, "Outras fontes de origem", "CSV / API / datasets", "Fontes adicionais suportadas pelo pipeline de dados.")
 
 System_Boundary(atlasSystem, "Atlas") {
-    Container(atlasApi, "API Atlas", "API REST", "Expõe produtos medicinais, princípios ativos, fontes e referências externas.")
-    Container(importer, "Importador de dados", "Batch / worker agendado", "Importa, normaliza e persiste dados de medicamentos das fontes de origem.")
-    ContainerDb(database, "Banco de dados Atlas", "Banco de dados relacional", "Armazena dados normalizados de produtos medicinais, medicamentos, ingredientes, regulações e referências de fonte.")
-    ContainerDb(redis, "Redis", "Armazenamento em memória", "Armazena cache de respostas da API e consultas temporárias.")
+    Container(atlasApi, "API Atlas", "API REST", "Expõe o catálogo consolidado: medicamentos, produtos, apresentações, classificações, regulações e proveniência.")
+    Container(dataPipeline, "Data Pipeline", "Batch / worker agendado", "Extrai, normaliza, valida, resolve correspondências, persiste dados, registra proveniência e sincroniza o catálogo.")
+    ContainerDb(database, "Banco de dados Atlas", "Banco de dados relacional", "Armazena catálogo normalizado, proveniência, referências externas e metadados das execuções de ETL.")
+    ContainerDb(rawArtifactStorage, "Raw Artifact Storage", "Filesystem / Object Storage", "Armazena CSVs, JSONs, documentos e outros conteúdos exatamente como foram obtidos para auditoria e reprocessamento.")
+    ContainerDb(redis, "Redis", "Armazenamento em memória", "Cache das consultas da API.")
 }
 
 Rel(consumer, atlasApi, "Consome", "HTTPS / JSON")
@@ -23,12 +25,14 @@ Rel(consumer, atlasApi, "Consome", "HTTPS / JSON")
 Rel(atlasApi, redis, "Lê e grava resultados de requisições em cache", "Protocolo Redis")
 Rel(atlasApi, database, "Lê dados canônicos", "SQL")
 
-Rel(importer, anvisaCsv, "Importa dados de produtos e regulação de", "CSV")
-Rel(importer, openFda, "Importa dados de produtos e regulação de", "HTTPS / JSON")
-Rel(importer, who, "Importa dados internacionais de referência de", "Importação de dataset")
-Rel(importer, otherSources, "Importa dados de fontes suportadas de", "CSV / API")
-Rel(importer, database, "Insere ou atualiza dados normalizados e referências externas", "SQL")
-Rel(importer, redis, "Invalida requisições em cache afetadas pela importação", "Protocolo Redis")
+Rel(dataPipeline, anvisa, "Obtém dados de", "CSV / dataset")
+Rel(dataPipeline, cmed, "Obtém dados de", "CSV / dataset")
+Rel(dataPipeline, openFda, "Obtém dados de", "HTTPS / JSON")
+Rel(dataPipeline, who, "Obtém dados de", "Importação de dataset")
+Rel(dataPipeline, otherSources, "Obtém dados de", "CSV / API / dataset")
+Rel(dataPipeline, rawArtifactStorage, "Persiste e recupera artefatos brutos", "Filesystem / Object Storage")
+Rel(dataPipeline, database, "Insere ou atualiza catálogo, proveniência e metadados de ETL", "SQL")
+Rel(dataPipeline, redis, "Invalida consultas em cache após alterações nos dados", "Protocolo Redis")
 
 SHOW_LEGEND()
 
